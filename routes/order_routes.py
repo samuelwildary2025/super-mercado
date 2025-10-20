@@ -8,7 +8,7 @@ from models.order_model import Order, OrderItem
 from schemas.order_schema import PedidoIn, PedidoOut, Cliente, Item
 from datetime import datetime
 
-router = APIRouter()
+router = APIRouter(tags=["Pedidos"])
 
 async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:
@@ -56,7 +56,6 @@ async def get_order(order_id: UUID, session: AsyncSession = Depends(get_session)
 
 @router.post("/orders", status_code=201)
 async def create_order(pedido: PedidoIn, session: AsyncSession = Depends(get_session)):
-    # Calcula total se necessário
     total = pedido.total if pedido.total is not None else sum((i.preco or 0) * (i.quantidade or 0) for i in pedido.itens)
     created_at = pedido.created_at or datetime.utcnow()
 
@@ -73,7 +72,7 @@ async def create_order(pedido: PedidoIn, session: AsyncSession = Depends(get_ses
         created_at=created_at,
     )
     session.add(order)
-    await session.flush()  # obtém o ID
+    await session.flush()
 
     for it in pedido.itens:
         oi = OrderItem(order_id=order.id, nome=it.nome, quantidade=it.quantidade, preco=it.preco)
