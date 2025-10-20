@@ -9,7 +9,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 
-# Copia o restante do código e gera o build
+# Copia o restante do frontend e gera o build
 COPY frontend ./
 RUN npm run build
 
@@ -26,10 +26,17 @@ ENV PYTHONUNBUFFERED=1
 ENV DATABASE_URL=postgresql+asyncpg://postgres:85885885@wildhub_postgres:5432/wildhub?sslmode=disable
 
 # Instala dependências
-COPY backend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o backend inteiro
-COPY backend .
+# Copia o backend inteiro (está na raiz)
+COPY . .
 
-# Copia o
+# Copia o build do frontend para a pasta esperada
+COPY --from=frontend /app/frontend/dist ./frontend/dist
+
+# Porta exposta
+EXPOSE 8000
+
+# Comando de inicialização
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
