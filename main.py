@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from routes.order_routes import router as order_router
+from routes import order_routes
 import os
 
 app = FastAPI(title="Sistema Queiroz API")
@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 # Rotas da API (prefixo /api)
-app.include_router(order_router, prefix="/api")
+app.include_router(order_routes.router, prefix="/api")
 
 # Caminho do build do frontend (React)
 frontend_dir = os.path.join(os.path.dirname(__file__), "frontend", "dist")
