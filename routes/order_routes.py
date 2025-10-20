@@ -8,7 +8,7 @@ from models.order_model import Order, OrderItem
 from schemas.order_schema import PedidoIn, PedidoOut, Cliente, Item
 from datetime import datetime
 
-router = APIRouter(prefix="/api", tags=["Pedidos"])
+router = APIRouter(prefix="/orders", tags=["Pedidos"])
 
 async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:
