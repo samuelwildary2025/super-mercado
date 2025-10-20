@@ -28,7 +28,7 @@ export default function PainelPedidos() {
   const [novoPedido, setNovoPedido] = useState(false);
   const audioRef = useRef(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://wildhub-sistema-queiroz.5mos1l.easypanel.host/api';
 
   const normalizeOrder = (p) => ({
     id: p?.id ?? Math.random().toString(36).slice(2),
