@@ -1,46 +1,37 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+from routes import order_routes
 import os
 
-app = FastAPI(title="Sistema Queiroz")
+app = FastAPI(title="Supermercado Queiroz - Painel de Pedidos")
 
-# CORS
+# CORS (liberar acesso do frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # ou ["https://wildhub-sistema-queiroz.5mos1l.easypanel.host"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Tenta carregar rotas de API se existirem (mantém compatibilidade com seu código)
-try:
-    from routes.order_routes import router as order_router  # type: ignore
-    app.include_router(order_router, prefix="/api/orders")
-except Exception:
-    pass
+# ✅ Prefixo das rotas de API
+app.include_router(order_routes.router, prefix="/api")
 
-# Healthcheck simples
-@app.get("/api/health")
-def health():
-    return {"status": "ok"}
+# ✅ Servir o build do React
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend_build")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
-# Servir o frontend (Vite build em /app/dist)
-FRONTEND_PATH = os.getenv("FRONTEND_PATH", "dist")
-if os.path.isdir(FRONTEND_PATH):
-    assets_dir = os.path.join(FRONTEND_PATH, "assets")
-    if os.path.isdir(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+# ✅ Rota fallback para o React Router
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    index_path = os.path.join(frontend_path, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"detail": "Frontend não encontrado"}
 
-    @app.get("/")
-    async def serve_index_root():
-        return FileResponse(os.path.join(FRONTEND_PATH, "index.html"))
-
-    @app.get("/{full_path:path}")
-    async def serve_index(full_path: str):
-        index_file = os.path.join(FRONTEND_PATH, "index.html")
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return {"detail": "Frontend não encontrado"}
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend rodando com sucesso"}
