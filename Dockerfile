@@ -1,32 +1,35 @@
-# ============================
-# 🧩 Build e Deploy Unificado (FastAPI + React)
-# ============================
-FROM node:18 AS build
+# =============================
+# Etapa 1: Build do FRONTEND
+# =============================
+FROM node:20-alpine AS frontend
+
+WORKDIR /app/frontend
+
+# Copia apenas os arquivos necessários primeiro
+COPY frontend/package*.json ./
+RUN npm install
+
+# Copia o restante do código e gera o build
+COPY frontend ./
+RUN npm run build
+
+# =============================
+# Etapa 2: Build do BACKEND
+# =============================
+FROM python:3.11-slim AS backend
+
 WORKDIR /app
 
-# Copiar tudo (front + back juntos)
-COPY . .
+# Variáveis de ambiente
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DATABASE_URL=postgresql+asyncpg://postgres:85885885@wildhub_postgres:5432/wildhub?sslmode=disable
 
-# Instalar dependências e buildar o frontend (Vite)
-RUN npm install && npm run build || true
-
-# ============================
-# ⚙️ Backend (FastAPI)
-# ============================
-FROM python:3.11-slim
-WORKDIR /app
-
-# Instalar dependências Python
-COPY requirements.txt .
+# Instala dependências
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar todo o código (inclui build do frontend gerado em /app/dist)
-COPY . .
+# Copia o backend inteiro
+COPY backend .
 
-# Variáveis de ambiente fixas para o EasyPanel (AZPanel)
-ENV FRONTEND_PATH=/app/dist
-ENV DATABASE_URL=postgres://postgres:85885885@wildhub_postgres:5432/wildhub?sslmode=disable
-ENV TZ=America/Fortaleza
-
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copia o
