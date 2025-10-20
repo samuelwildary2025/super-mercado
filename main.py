@@ -7,24 +7,25 @@ import os
 
 app = FastAPI(title="Supermercado Queiroz - Painel de Pedidos")
 
-# CORS (liberar acesso do frontend)
+# ✅ Middleware CORS (libera acesso do frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ou ["https://wildhub-sistema-queiroz.5mos1l.easypanel.host"]
+    allow_origins=["*"],  # você pode restringir depois
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Prefixo das rotas de API
+# ✅ Importa e registra as rotas do backend com prefixo /api
 app.include_router(order_routes.router, prefix="/api")
 
-# ✅ Servir o build do React
+# ✅ Caminho do frontend build
 frontend_path = os.path.join(os.path.dirname(__file__), "frontend_build")
+
 if os.path.exists(frontend_path):
     app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
-# ✅ Rota fallback para o React Router
+# ✅ Fallback — qualquer rota desconhecida vai pro index.html (React Router)
 @app.get("/{full_path:path}")
 async def serve_frontend(full_path: str):
     index_path = os.path.join(frontend_path, "index.html")
@@ -33,5 +34,5 @@ async def serve_frontend(full_path: str):
     return {"detail": "Frontend não encontrado"}
 
 @app.get("/health")
-async def health_check():
+async def health():
     return {"status": "ok", "message": "Backend rodando com sucesso"}
