@@ -3,40 +3,42 @@
 # =============================
 FROM node:20-alpine AS frontend
 
-WORKDIR /app/frontend
+WORKDIR /app
 
-# Copia apenas os arquivos necessários primeiro
-COPY frontend/package*.json ./
+# Copia apenas os arquivos de dependência do frontend
+COPY package*.json ./
 RUN npm install
 
-# Copia o restante do frontend e gera o build
-COPY frontend ./
+# Copia o restante e faz o build
+COPY . .
 RUN npm run build
 
 # =============================
-# Etapa 2: Build do BACKEND
+# Etapa 2: BACKEND com FastAPI
 # =============================
 FROM python:3.11-slim AS backend
 
 WORKDIR /app
 
-# Variáveis de ambiente
+# Evita cache e buffers
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+
+# Define a URL do banco
 ENV DATABASE_URL=postgresql+asyncpg://postgres:85885885@wildhub_postgres:5432/wildhub?sslmode=disable
 
-# Instala dependências
+# Copia dependências Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o backend inteiro (está na raiz)
+# Copia todo o backend (raiz)
 COPY . .
 
-# Copia o build do frontend para a pasta esperada
-COPY --from=frontend /app/frontend/dist ./frontend/dist
+# Copia o build do React (feito na etapa anterior)
+COPY --from=frontend /app/dist ./frontend/dist
 
-# Porta exposta
+# Expõe a porta do FastAPI
 EXPOSE 8000
 
-# Comando de inicialização
+# Inicializa o servidor
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
